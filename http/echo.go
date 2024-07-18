@@ -2,8 +2,8 @@ package http
 
 import (
 	"encoding/json"
-	"git.atomecho.cn/atomecho/golib/zlog"
 	"github.com/gin-gonic/gin"
+	"github.com/tiant-developer/go-tiant/zlog"
 	"net/http"
 )
 

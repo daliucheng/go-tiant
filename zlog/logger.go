@@ -1,8 +1,8 @@
 package zlog
 
 import (
-	"git.atomecho.cn/atomecho/golib/env"
 	"github.com/gin-gonic/gin"
+	"github.com/tiant-developer/go-tiant/env"
 	"io"
 	"os"
 	"path/filepath"

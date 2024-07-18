@@ -1,4 +1,4 @@
-module git.atomecho.cn/atomecho/golib
+module github.com/tiant-developer/go-tiant
 
 go 1.21
 

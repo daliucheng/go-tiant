@@ -1,8 +1,8 @@
 package sse
 
 import (
-	"git.atomecho.cn/atomecho/golib/zlog"
 	"github.com/gin-gonic/gin"
+	"github.com/tiant-developer/go-tiant/zlog"
 )
 
 func UploadEventStream(ctx *gin.Context) {

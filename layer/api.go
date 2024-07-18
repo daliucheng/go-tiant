@@ -1,10 +1,10 @@
 package layer
 
 import (
-	"git.atomecho.cn/atomecho/golib/api"
-	"git.atomecho.cn/atomecho/golib/errors"
 	"github.com/bytedance/sonic"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/tiant-developer/go-tiant/api"
+	"github.com/tiant-developer/go-tiant/errors"
 )
 
 type Res struct {
@@ -121,8 +121,8 @@ func (entity *Api) DecodeApiResponse(outPut interface{}, data *ApiRes, err error
 
 	if data.ErrNo != 0 {
 		return errors.Error{
-			ErrNo:  data.ErrNo,
-			ErrMsg: data.ErrMsg,
+			Code:    data.ErrNo,
+			Message: data.ErrMsg,
 		}
 	}
 	if len(data.Data) > 0 {

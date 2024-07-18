@@ -2,9 +2,9 @@ package middleware
 
 import (
 	"fmt"
-	"git.atomecho.cn/atomecho/golib/redis"
-	"git.atomecho.cn/atomecho/golib/zlog"
 	"github.com/gin-gonic/gin"
+	"github.com/tiant-developer/go-tiant/redis"
+	"github.com/tiant-developer/go-tiant/zlog"
 	"strconv"
 	"time"
 )

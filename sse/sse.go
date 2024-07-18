@@ -2,10 +2,10 @@ package sse
 
 import (
 	"fmt"
-	"git.atomecho.cn/atomecho/golib/errors"
-	http2 "git.atomecho.cn/atomecho/golib/http"
 	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
+	"github.com/tiant-developer/go-tiant/errors"
+	http2 "github.com/tiant-developer/go-tiant/http"
 	"net/http"
 )
 
@@ -27,11 +27,11 @@ func (e MessageEvent) String() string {
 func EchoStreamError(ctx *gin.Context, err error) {
 	rander := http2.DefaultRender{}
 	if e, ok := err.(errors.Error); ok {
-		rander.ErrNo = e.ErrNo
-		rander.ErrMsg = e.ErrMsg
+		rander.ErrNo = e.Code
+		rander.ErrMsg = e.Message
 	} else {
-		rander.ErrNo = errors.ErrorSystemError.ErrNo
-		rander.ErrMsg = errors.ErrorSystemError.ErrMsg
+		rander.ErrNo = errors.ErrorSystemError.Code
+		rander.ErrMsg = errors.ErrorSystemError.Message
 	}
 	flusher, _ := ctx.Writer.(http.Flusher)
 	str, _ := sonic.Marshal(rander)

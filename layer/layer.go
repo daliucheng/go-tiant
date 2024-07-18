@@ -1,7 +1,7 @@
 package layer
 
 import (
-	"git.atomecho.cn/atomecho/golib/zlog"
+	"github.com/tiant-developer/go-tiant/zlog"
 
 	"github.com/gin-gonic/gin"
 	"reflect"

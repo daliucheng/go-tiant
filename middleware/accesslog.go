@@ -3,8 +3,8 @@ package middleware
 import (
 	"bytes"
 	"fmt"
-	"git.atomecho.cn/atomecho/golib/zlog"
 	"github.com/duke-git/lancet/v2/strutil"
+	"github.com/tiant-developer/go-tiant/zlog"
 	"io"
 	"strings"
 	"time"

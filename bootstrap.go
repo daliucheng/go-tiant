@@ -1,11 +1,11 @@
 package golib
 
 import (
-	"git.atomecho.cn/atomecho/golib/env"
-	"git.atomecho.cn/atomecho/golib/layer"
-	"git.atomecho.cn/atomecho/golib/middleware"
-	"git.atomecho.cn/atomecho/golib/redis"
 	"github.com/gin-gonic/gin"
+	"github.com/tiant-developer/go-tiant/env"
+	"github.com/tiant-developer/go-tiant/layer"
+	"github.com/tiant-developer/go-tiant/middleware"
+	"github.com/tiant-developer/go-tiant/redis"
 	"gorm.io/gorm"
 )
 

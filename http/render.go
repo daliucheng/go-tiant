@@ -2,8 +2,8 @@ package http
 
 import (
 	"fmt"
-	errors2 "git.atomecho.cn/atomecho/golib/errors"
-	"git.atomecho.cn/atomecho/golib/zlog"
+	errors2 "github.com/tiant-developer/go-tiant/errors"
+	"github.com/tiant-developer/go-tiant/zlog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -64,8 +64,8 @@ func RenderJsonFail(ctx *gin.Context, err error) {
 	code, msg := -1, errors.Cause(err).Error()
 	switch errors.Cause(err).(type) {
 	case errors2.Error:
-		code = errors.Cause(err).(errors2.Error).ErrNo
-		msg = errors.Cause(err).(errors2.Error).ErrMsg
+		code = errors.Cause(err).(errors2.Error).Code
+		msg = errors.Cause(err).(errors2.Error).Message
 	default:
 	}
 
@@ -86,8 +86,8 @@ func RenderJsonAbort(ctx *gin.Context, err error) {
 
 	switch errors.Cause(err).(type) {
 	case errors2.Error:
-		r.SetReturnCode(errors.Cause(err).(errors2.Error).ErrNo)
-		r.SetReturnMsg(errors.Cause(err).(errors2.Error).ErrMsg)
+		r.SetReturnCode(errors.Cause(err).(errors2.Error).Code)
+		r.SetReturnMsg(errors.Cause(err).(errors2.Error).Message)
 		r.SetReturnData(gin.H{})
 	default:
 		r.SetReturnCode(-1)

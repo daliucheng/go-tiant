@@ -7,7 +7,7 @@ api:
     # 调用下游的服务名称
     service: user
     # 请求完整地址
-    domain: http://10.20.22.10:9051
+    domain: http://XXX:8080
     # 超时配置，time.Duration 类型
     timeout: 5000ms
     # 重试次数，最多执行retry+1次
@@ -23,7 +23,7 @@ func SubmitTask(ctx *gin.Context, taskType string, SummaryId string, input strin
 		Input:      input,
 		CommitType: CommitType{IsWs: true},
 	}
-	resp, err := conf.Resource.Api["jobd"].HttpPost(ctx, "/jobd/committer/Commit", api.HttpRequestOptions{
+	resp, err := conf.Resource.Api["user"].HttpPost(ctx, "/demo", api.HttpRequestOptions{
 		RequestBody: apiReq,
 		Encode:      api.EncodeJson,
 	})

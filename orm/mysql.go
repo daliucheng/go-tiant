@@ -3,8 +3,8 @@ package orm
 import (
 	"context"
 	"fmt"
-	"git.atomecho.cn/atomecho/golib/zlog"
 	"github.com/pkg/errors"
+	"github.com/tiant-developer/go-tiant/zlog"
 	ormUtil "gorm.io/gorm/utils"
 	"gorm.io/plugin/dbresolver"
 	"time"

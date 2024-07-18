@@ -2,8 +2,8 @@ package elastic
 
 import (
 	"fmt"
-	"git.atomecho.cn/atomecho/golib/env"
-	"git.atomecho.cn/atomecho/golib/zlog"
+	"github.com/tiant-developer/go-tiant/env"
+	"github.com/tiant-developer/go-tiant/zlog"
 	"net/http"
 	"strings"
 

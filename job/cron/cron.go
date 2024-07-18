@@ -2,7 +2,7 @@ package cron
 
 import (
 	"fmt"
-	"git.atomecho.cn/atomecho/golib/zlog"
+	"github.com/tiant-developer/go-tiant/zlog"
 	"log"
 	"os"
 	"runtime"
