@@ -103,11 +103,20 @@ func Use[T any](controller IController[*T]) func(ctx *gin.Context) {
 		var newReq T
 		newCTL.SetCtx(ctx)
 		newCTL.SetEntity(controller)
-		err := ctx.ShouldBind(&newReq)
-		if err != nil {
-			newCTL.LogWarnf("Controller %T param bind error, err:%+v", newCTL, err)
-			newCTL.RenderJsonFail(errors.ErrorParamInvalid)
-			return
+		if len(ctx.ContentType()) == 0 && ctx.Request.Method == http.MethodPost { // post默认application/json
+			err := ctx.BindJSON(&newReq)
+			if err != nil {
+				newCTL.LogWarnf("Controller %T param bind error, err:%+v", newCTL, err)
+				newCTL.RenderJsonFail(errors.ErrorParamInvalid)
+				return
+			}
+		} else {
+			err := ctx.ShouldBind(&newReq)
+			if err != nil {
+				newCTL.LogWarnf("Controller %T param bind error, err:%+v", newCTL, err)
+				newCTL.RenderJsonFail(errors.ErrorParamInvalid)
+				return
+			}
 		}
 		// action execute
 		data, err := newCTL.Action(&newReq)
