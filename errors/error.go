@@ -36,11 +36,11 @@ func (err Error) Equal(e error) bool {
 	}
 }
 
-func (err Error) WrapPrint(core error, message string, user ...interface{}) error {
+func (err Error) WrapPrint(core error, message string) error {
 	if core == nil {
 		return nil
 	}
-	err.SetErrPrintfMsg(core)
+	err.ErrMsg = fmt.Sprint(err.ErrMsg, core)
 	return errors.Wrap(err, message)
 }
 
@@ -48,7 +48,7 @@ func (err Error) WrapPrintf(core error, format string, message ...interface{}) e
 	if core == nil {
 		return nil
 	}
-	err.SetErrPrintfMsg(core)
+	err.ErrMsg = fmt.Sprintf(err.ErrMsg, core)
 	return errors.Wrap(err, fmt.Sprintf(format, message...))
 }
 
@@ -56,14 +56,9 @@ func (err Error) Wrap(core error) error {
 	if core == nil {
 		return nil
 	}
-
 	msg := err.ErrMsg
 	err.ErrMsg = core.Error()
 	return errors.Wrap(err, msg)
-}
-
-func (err *Error) SetErrPrintfMsg(v ...interface{}) {
-	err.ErrMsg = fmt.Sprintf(err.ErrMsg, v...)
 }
 
 // 标准准出错误码定义
@@ -75,8 +70,6 @@ const (
 	INVALID_REQUEST = 6   //无效请求
 	DEFAULT_ERROR   = 100 //默认错误，未准出的错误码，会修改为此错误码
 	CUSTOM_ERROR    = 101 //自定义错误，无固定错误文案
-
-	// 业务错误码，规范：6位数字长度，前2位模块，后6位业务自定义
 )
 
 // 标准准出错误码文案定义
@@ -131,69 +124,4 @@ var ErrorDefault = Error{
 var ErrorCustomError = Error{
 	ErrNo:  CUSTOM_ERROR,
 	ErrMsg: "%s",
-}
-
-// 错误码转换映射表，用以支持业务模块错误码和标准准出错误码映射
-var ErrNoMap = map[int]int{}
-
-func FormatOutputError(e error) error {
-	e = errors.Cause(e)
-	err, ok := e.(Error)
-	if !ok {
-		return Error{
-			ErrNo:  DEFAULT_ERROR,
-			ErrMsg: ErrMsg[DEFAULT_ERROR],
-		}
-	}
-	if err.ErrNo == CUSTOM_ERROR {
-		return Error{
-			ErrNo:  CUSTOM_ERROR,
-			ErrMsg: err.ErrMsg,
-		}
-	}
-	// 错误码转换
-	errNo, exist := ErrNoMap[err.ErrNo]
-	if !exist {
-		errNo = err.ErrNo
-	}
-	// 标准化输出
-	if errMsg, exist := ErrMsg[errNo]; exist {
-		return Error{
-			ErrNo:  errNo,
-			ErrMsg: errMsg,
-		}
-	}
-	return Error{
-		ErrNo:  DEFAULT_ERROR,
-		ErrMsg: ErrMsg[DEFAULT_ERROR],
-	}
-}
-
-// 校验业务准出错误码是否符合规范（6位长度）
-func checkOutErrorFormat(errNo int) bool {
-	if errNo < 1000000 || errNo > 999999 {
-		return false
-	}
-	return true
-}
-
-// 初始化业务准出错误码和映射关系。注意：准出的错误码需要符合规范，同时更新到wiki
-// outErrs-业务定义的标准准出错误码
-// errMap-业务使用的错误码和标准准出错误码映射关系
-func InitOutErrors(outErrs map[int]string, errMap map[int]int) {
-	// 补充标准准出错误码
-	for errNo, errMsg := range outErrs {
-		if !checkOutErrorFormat(errNo) {
-			continue
-		}
-		ErrMsg[errNo] = errMsg
-	}
-	// 补充错误码转换映射
-	for errNoIn, errNoOut := range errMap {
-		// 检查errNoOut是否标准准出错误码，非准出错误码忽略
-		if _, exist := ErrMsg[errNoOut]; !exist {
-			continue
-		}
-		ErrNoMap[errNoIn] = errNoOut
-	}
 }

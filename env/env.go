@@ -1,8 +1,8 @@
 package env
 
 import (
+	"github.com/duke-git/lancet/v2/netutil"
 	"github.com/gin-gonic/gin"
-	"github.com/tiant-developer/go-tiant/utils"
 	"os"
 	"path/filepath"
 )
@@ -23,7 +23,7 @@ var (
 )
 
 func init() {
-	LocalIP = utils.GetLocalIp()
+	LocalIP = netutil.GetInternalIp()
 	isDocker = false
 	// 运行环境
 	RunMode = gin.ReleaseMode

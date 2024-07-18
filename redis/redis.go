@@ -1,8 +1,9 @@
 package redis
 
 import (
-	"github.com/tiant-developer/go-tiant/utils"
-	"github.com/tiant-developer/go-tiant/zlog"
+	"context"
+	"fmt"
+	"git.atomecho.cn/atomecho/golib/zlog"
 	"strings"
 	"time"
 
@@ -10,12 +11,7 @@ import (
 	redigo "github.com/gomodule/redigo/redis"
 )
 
-// 日志打印Do args部分支持的最大长度
-const logForRedisValue = 500
-const prefix = "@@redis."
-
 type RedisConf struct {
-	Service         string        `yaml:"service"`
 	Addr            string        `yaml:"addr"`
 	Password        string        `yaml:"password"`
 	MaxIdle         int           `yaml:"maxIdle"`
@@ -54,15 +50,18 @@ func (conf *RedisConf) checkConf() {
 
 // 日志打印Do args部分支持的最大长度
 type Redis struct {
-	pool       *redigo.Pool
-	service    string
-	remoteAddr string
-	logger     *zlog.Logger
+	pool   *redigo.Pool
+	logger *zlog.Logger
+	ctx    context.Context
+}
+
+func (r *Redis) WithContext(ctx context.Context) *Redis {
+	r.ctx = ctx
+	return r
 }
 
 func InitRedisClient(conf RedisConf) (*Redis, error) {
 	conf.checkConf()
-
 	p := &redigo.Pool{
 		MaxIdle:         conf.MaxIdle,
 		MaxActive:       conf.MaxActive,
@@ -92,56 +91,70 @@ func InitRedisClient(conf RedisConf) (*Redis, error) {
 		},
 	}
 	c := &Redis{
-		service:    conf.Service,
-		remoteAddr: conf.Addr,
-		pool:       p,
-		logger:     zlog.ZapLogger.WithOptions(zlog.AddCallerSkip(1)),
+		pool:   p,
+		logger: zlog.ZapLogger.WithOptions(zlog.AddCallerSkip(1)),
+		ctx:    context.Background(),
 	}
-
 	return c, nil
 }
 
-func (r *Redis) Do(ctx *gin.Context, commandName string, args ...interface{}) (reply interface{}, err error) {
+func (r *Redis) Do(commandName string, args ...interface{}) (reply interface{}, err error) {
 	start := time.Now()
-
 	conn := r.pool.Get()
 	if err := conn.Err(); err != nil {
-		r.logger.Error("get connection error: "+err.Error(), r.commonFields(ctx)...)
+		r.logger.Error("get connection error: "+err.Error(), r.commonFields(r.ctx)...)
 		return reply, err
 	}
-
 	reply, err = conn.Do(commandName, args...)
 	if e := conn.Close(); e != nil {
-		r.logger.Warn("connection close error: "+e.Error(), r.commonFields(ctx)...)
+		r.logger.Warn("connection close error: "+e.Error(), r.commonFields(r.ctx)...)
 	}
-
-	end := time.Now()
-
 	// 执行时间 单位:毫秒
 	msg := "redis do success"
 	if err != nil {
 		// 超时不报错
 		if commandName != "BLPOP" && commandName != "BRPOP" && !strings.Contains(err.Error(), "i/o timeout") {
 			msg = "redis do error: " + err.Error()
-			r.logger.Error(msg, r.commonFields(ctx)...)
+			r.logger.Error(msg, r.commonFields(r.ctx)...)
 		}
 	}
-
-	fields := append(r.commonFields(ctx),
-		zlog.String("reqStartTime", utils.GetFormatRequestTime(start)),
-		zlog.String("reqEndTime", utils.GetFormatRequestTime(end)),
-		zlog.Float64("cost", utils.GetRequestCost(start, end)),
+	fields := append(r.commonFields(r.ctx),
 		zlog.String("command", commandName),
-		zlog.String("commandVal", utils.JoinArgs(logForRedisValue, args...)),
+		zlog.String("commandVal", joinArgs(500, args...)),
 	)
-
+	fields = append(fields, zlog.AppendCostTime(start, time.Now())...)
 	r.logger.Debug(msg, fields...)
 	return reply, err
 }
 
-func (r *Redis) commonFields(ctx *gin.Context) []zlog.Field {
+func joinArgs(showByte int, args ...interface{}) string {
+	var sumLen int
+
+	argStr := make([]string, len(args))
+	for i, v := range args {
+		if s, ok := v.(string); ok {
+			argStr[i] = s
+		} else {
+			argStr[i] = fmt.Sprintf("%v", v)
+		}
+
+		sumLen += len(argStr[i])
+	}
+
+	argVal := strings.Join(argStr, " ")
+	if sumLen > showByte {
+		argVal = argVal[:showByte] + " ..."
+	}
+	return argVal
+}
+
+func (r *Redis) commonFields(ctx context.Context) []zlog.Field {
+	var requestID string
+	if c, ok := ctx.(*gin.Context); ok && c != nil {
+		requestID, _ = ctx.Value(zlog.ContextKeyRequestID).(string)
+	}
 	return []zlog.Field{
-		zlog.String("requestId", zlog.GetRequestID(ctx)),
+		zlog.String("requestId", requestID),
 	}
 }
 

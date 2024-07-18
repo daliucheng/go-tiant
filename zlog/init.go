@@ -2,7 +2,7 @@ package zlog
 
 import (
 	"fmt"
-	"github.com/tiant-developer/go-tiant/env"
+	"git.atomecho.cn/atomecho/golib/env"
 	"go.uber.org/zap/buffer"
 	"os"
 	"time"
@@ -102,9 +102,9 @@ var logConfig = struct {
 	BufferFlushInterval: 5 * time.Second,
 }
 
-func InitLog(moduleName string, conf LogConfig) *zap.SugaredLogger {
+func InitLog(conf LogConfig) *zap.SugaredLogger {
 	// 定制日志格式
-	if err := RegisterJSONEncoder(moduleName); err != nil {
+	if err := RegisterJSONEncoder(); err != nil {
 		println("RegisterJSONEncoder: " + err.Error())
 	}
 
@@ -120,8 +120,8 @@ func InitLog(moduleName string, conf LogConfig) *zap.SugaredLogger {
 	return SugaredLogger
 }
 
-func RegisterJSONEncoder(moduleName string) error {
-	return zap.RegisterEncoder(moduleName, func(cfg zapcore.EncoderConfig) (zapcore.Encoder, error) {
+func RegisterJSONEncoder() error {
+	return zap.RegisterEncoder("atomecho", func(cfg zapcore.EncoderConfig) (zapcore.Encoder, error) {
 		jsonEncoder := zapcore.NewJSONEncoder(cfg)
 		return &defaultEncoder{
 			Encoder: jsonEncoder,

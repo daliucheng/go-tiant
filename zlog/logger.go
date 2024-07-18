@@ -1,8 +1,8 @@
 package zlog
 
 import (
+	"git.atomecho.cn/atomecho/golib/env"
 	"github.com/gin-gonic/gin"
-	"github.com/tiant-developer/go-tiant/env"
 	"io"
 	"os"
 	"path/filepath"
@@ -140,8 +140,7 @@ func getLogLevel(lv string) (level zapcore.Level) {
 
 func getEncoder() zapcore.Encoder {
 	// time字段编码器
-	timeEncoder := zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.999999")
-
+	timeEncoder := zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.999")
 	encoderCfg := zapcore.EncoderConfig{
 		LevelKey:       "level",
 		TimeKey:        "time",
@@ -319,14 +318,6 @@ func sugaredLogger(ctx *gin.Context) *zap.SugaredLogger {
 	return s
 }
 
-// 提供给业务使用的server log 日志打印方法
-func Debug(ctx *gin.Context, args ...interface{}) {
-	if noLog(ctx) {
-		return
-	}
-	sugaredLogger(ctx).Debug(args...)
-}
-
 func Debugf(ctx *gin.Context, format string, args ...interface{}) {
 	if noLog(ctx) {
 		return
@@ -388,18 +379,4 @@ func Panicf(ctx *gin.Context, format string, args ...interface{}) {
 		return
 	}
 	sugaredLogger(ctx).Panicf(format, args...)
-}
-
-func Fatal(ctx *gin.Context, args ...interface{}) {
-	if noLog(ctx) {
-		return
-	}
-	sugaredLogger(ctx).Fatal(args...)
-}
-
-func Fatalf(ctx *gin.Context, format string, args ...interface{}) {
-	if noLog(ctx) {
-		return
-	}
-	sugaredLogger(ctx).Fatalf(format, args...)
 }

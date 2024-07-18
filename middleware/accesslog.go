@@ -3,8 +3,8 @@ package middleware
 import (
 	"bytes"
 	"fmt"
-	"github.com/tiant-developer/go-tiant/utils"
-	"github.com/tiant-developer/go-tiant/zlog"
+	"git.atomecho.cn/atomecho/golib/zlog"
+	"github.com/duke-git/lancet/v2/strutil"
 	"io"
 	"strings"
 	"time"
@@ -97,10 +97,6 @@ func AccessLog(conf LoggerConfig) gin.HandlerFunc {
 		if conf.Skip != nil && conf.Skip(c) {
 			return
 		}
-
-		// Stop timer
-		end := time.Now()
-
 		response := ""
 		if blw.body != nil && maxRespBodyLen != -1 {
 			response = blw.body.String()
@@ -108,26 +104,21 @@ func AccessLog(conf LoggerConfig) gin.HandlerFunc {
 				response = response[:maxRespBodyLen]
 			}
 		}
-
 		// 固定notice
 		commonFields := []zlog.Field{
 			zlog.String("method", c.Request.Method),
-			zlog.String("clientIp", utils.GetClientIp(c)),
+			zlog.String("clientIp", c.ClientIP()),
 			zlog.String("cookie", getCookie(c)),
-			zlog.String("reqStartTime", utils.GetFormatRequestTime(start)),
-			zlog.String("reqEndTime", utils.GetFormatRequestTime(end)),
-			zlog.Float64("cost", utils.GetRequestCost(start, end)),
 			zlog.String("requestParam", reqParam),
 			zlog.Int("responseStatus", c.Writer.Status()),
 			zlog.String("response", response),
 			zlog.Int("bodySize", c.Writer.Size()),
-			zlog.String("reqErr", c.Errors.ByType(gin.ErrorTypePrivate).String()),
 		}
-
+		commonFields = append(commonFields, zlog.AppendCostTime(start, time.Now())...)
 		// 新的notice添加方式
 		customerFields := zlog.GetCustomerFields(c)
 		commonFields = append(commonFields, customerFields...)
-		zlog.InfoLogger(c, "notice", commonFields...)
+		zlog.InfoLogger(c, "access", commonFields...)
 	}
 }
 
@@ -152,36 +143,19 @@ func getReqBody(c *gin.Context, maxReqBodyLen int) (reqBody string) {
 		reqBody = c.Request.PostForm.Encode()
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 
-	} else if c.Request.Body != nil && c.ContentType() == "application/octet-stream" {
-
 	} else if c.Request.Body != nil {
 		requestBody, err := c.GetRawData()
 		if err != nil {
 			zlog.WarnLogger(c, "get http request body error: "+err.Error())
 		}
-		reqBody = utils.BytesToString(requestBody)
+		reqBody = strutil.BytesToString(requestBody)
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 	}
-
-	// 拼接上 url?rawQuery 的参数 todo 为了兼容以前逻辑，感觉参数应该分开写更好?
-	if c.Request.URL.RawQuery != "" {
-		reqBody += "&" + c.Request.URL.RawQuery
-	}
-
 	// 截断参数
 	if len(reqBody) > maxReqBodyLen {
 		reqBody = reqBody[:maxReqBodyLen]
 	}
-
 	return reqBody
-}
-
-// 从request body中解析特定字段作为notice key打印
-func getReqValueByKey(ctx *gin.Context, k string) string {
-	if vs, exist := ctx.Request.Form[k]; exist && len(vs) > 0 {
-		return vs[0]
-	}
-	return ""
 }
 
 func getCookie(ctx *gin.Context) string {
@@ -190,11 +164,4 @@ func getCookie(ctx *gin.Context) string {
 		cStr += fmt.Sprintf("%s=%s&", c.Name, c.Value)
 	}
 	return strings.TrimRight(cStr, "&")
-}
-
-func AddField(field ...zlog.Field) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		zlog.AddField(c, field...)
-		c.Next()
-	}
 }

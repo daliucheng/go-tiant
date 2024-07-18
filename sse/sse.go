@@ -1,0 +1,56 @@
+package sse
+
+import (
+	"fmt"
+	"git.atomecho.cn/atomecho/golib/errors"
+	http2 "git.atomecho.cn/atomecho/golib/http"
+	"github.com/bytedance/sonic"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
+
+// 定义 SSE 事件
+type MessageEvent struct {
+	Id    string
+	Event string
+	Data  string
+}
+
+// 实现 SSE 事件的 String() 方法
+func (e MessageEvent) String() string {
+	return fmt.Sprintf("id:%s\n"+
+		"event:%s\n"+
+		"data:%s\n\n", e.Id, e.Event, e.Data)
+}
+
+// 流式输出报错
+func EchoStreamError(ctx *gin.Context, err error) {
+	rander := http2.DefaultRender{}
+	if e, ok := err.(errors.Error); ok {
+		rander.ErrNo = e.ErrNo
+		rander.ErrMsg = e.ErrMsg
+	} else {
+		rander.ErrNo = errors.ErrorSystemError.ErrNo
+		rander.ErrMsg = errors.ErrorSystemError.ErrMsg
+	}
+	flusher, _ := ctx.Writer.(http.Flusher)
+	str, _ := sonic.Marshal(rander)
+	msg := MessageEvent{
+		Id:    "",
+		Event: "error",
+		Data:  string(str),
+	}
+	fmt.Fprintf(ctx.Writer, "%s", msg.String())
+	flusher.Flush()
+}
+
+func EchoStream(ctx *gin.Context, id, event, str string) {
+	flusher, _ := ctx.Writer.(http.Flusher)
+	msg := MessageEvent{
+		Id:    id,
+		Event: event,
+		Data:  str,
+	}
+	fmt.Fprintf(ctx.Writer, "%s", msg.String())
+	flusher.Flush()
+}

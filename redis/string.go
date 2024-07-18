@@ -4,8 +4,6 @@ import (
 	"math"
 	"strings"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
 )
@@ -14,8 +12,8 @@ const (
 	_CHUNK_SIZE = 32
 )
 
-func (r *Redis) Get(ctx *gin.Context, key string) ([]byte, error) {
-	if res, err := redis.Bytes(r.Do(ctx, "GET", key)); err == redis.ErrNil {
+func (r *Redis) Get(key string) ([]byte, error) {
+	if res, err := redis.Bytes(r.Do("GET", key)); err == redis.ErrNil {
 		return nil, nil
 	} else {
 		return res, err
@@ -23,7 +21,7 @@ func (r *Redis) Get(ctx *gin.Context, key string) ([]byte, error) {
 }
 
 // 使用需注意，这个方法没有对外暴露error
-func (r *Redis) MGet(ctx *gin.Context, keys ...string) [][]byte {
+func (r *Redis) MGet(keys ...string) [][]byte {
 	// 1.初始化返回结果
 	res := make([][]byte, 0, len(keys))
 
@@ -44,12 +42,11 @@ func (r *Redis) MGet(ctx *gin.Context, keys ...string) [][]byte {
 		for _, v := range chunk {
 			keyList = append(keyList, v)
 		}
-		cacheRes, err := redis.ByteSlices(r.Do(ctx, "MGET", keyList...))
+		cacheRes, err := redis.ByteSlices(r.Do("MGET", keyList...))
 		if err != nil {
 			for i := 0; i < len(keyList); i++ {
 				res = append(res, nil)
 			}
-			r.logger.Error("caceh redis mget error: "+err.Error(), r.commonFields(ctx)...)
 		} else {
 			res = append(res, cacheRes...)
 		}
@@ -57,18 +54,18 @@ func (r *Redis) MGet(ctx *gin.Context, keys ...string) [][]byte {
 	return res
 }
 
-func (r *Redis) MSet(ctx *gin.Context, values ...interface{}) error {
-	_, err := r.Do(ctx, "MSET", values...)
+func (r *Redis) MSet(values ...interface{}) error {
+	_, err := r.Do("MSET", values...)
 	return err
 }
 
-func (r *Redis) Set(ctx *gin.Context, key string, value interface{}, expire ...int64) error {
+func (r *Redis) Set(key string, value interface{}, expire ...int64) error {
 	var res string
 	var err error
 	if expire == nil {
-		res, err = redis.String(r.Do(ctx, "SET", key, value))
+		res, err = redis.String(r.Do("SET", key, value))
 	} else {
-		res, err = redis.String(r.Do(ctx, "SET", key, value, "EX", expire[0]))
+		res, err = redis.String(r.Do("SET", key, value, "EX", expire[0]))
 	}
 	if err != nil {
 		return err
@@ -78,30 +75,30 @@ func (r *Redis) Set(ctx *gin.Context, key string, value interface{}, expire ...i
 	return nil
 }
 
-func (r *Redis) SetEx(ctx *gin.Context, key string, value interface{}, expire int64) error {
-	return r.Set(ctx, key, value, expire)
+func (r *Redis) SetEx(key string, value interface{}, expire int64) error {
+	return r.Set(key, value, expire)
 }
 
-func (r *Redis) Append(ctx *gin.Context, key string, value interface{}) (int, error) {
-	return redis.Int(r.Do(ctx, "APPEND", key, value))
+func (r *Redis) Append(key string, value interface{}) (int, error) {
+	return redis.Int(r.Do("APPEND", key, value))
 }
 
-func (r *Redis) Incr(ctx *gin.Context, key string) (int64, error) {
-	return redis.Int64(r.Do(ctx, "INCR", key))
+func (r *Redis) Incr(key string) (int64, error) {
+	return redis.Int64(r.Do("INCR", key))
 }
 
-func (r *Redis) IncrBy(ctx *gin.Context, key string, value int64) (int64, error) {
-	return redis.Int64(r.Do(ctx, "INCRBY", key, value))
+func (r *Redis) IncrBy(key string, value int64) (int64, error) {
+	return redis.Int64(r.Do("INCRBY", key, value))
 }
 
-func (r *Redis) IncrByFloat(ctx *gin.Context, key string, value float64) (float64, error) {
-	return redis.Float64(r.Do(ctx, "INCRBYFLOAT", key, value))
+func (r *Redis) IncrByFloat(key string, value float64) (float64, error) {
+	return redis.Float64(r.Do("INCRBYFLOAT", key, value))
 }
 
-func (r *Redis) Decr(ctx *gin.Context, key string) (int64, error) {
-	return redis.Int64(r.Do(ctx, "DECR", key))
+func (r *Redis) Decr(key string) (int64, error) {
+	return redis.Int64(r.Do("DECR", key))
 }
 
-func (r *Redis) DecrBy(ctx *gin.Context, key string, value int64) (int64, error) {
-	return redis.Int64(r.Do(ctx, "DECRBY", key, value))
+func (r *Redis) DecrBy(key string, value int64) (int64, error) {
+	return redis.Int64(r.Do("DECRBY", key, value))
 }

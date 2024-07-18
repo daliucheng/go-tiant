@@ -2,8 +2,7 @@ package redis
 
 import (
 	"errors"
-	"github.com/tiant-developer/go-tiant/utils"
-	"github.com/tiant-developer/go-tiant/zlog"
+	"git.atomecho.cn/atomecho/golib/zlog"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +10,7 @@ import (
 
 type Pipeliner interface {
 	Exec(ctx *gin.Context) ([]interface{}, error)
-	Put(ctx *gin.Context, cmd string, args ...interface{}) error
+	Put(cmd string, args ...interface{}) error
 }
 
 type commands struct {
@@ -33,7 +32,7 @@ func (r *Redis) Pipeline() Pipeliner {
 	}
 }
 
-func (p *Pipeline) Put(ctx *gin.Context, cmd string, args ...interface{}) error {
+func (p *Pipeline) Put(cmd string, args ...interface{}) error {
 	if len(args) < 1 {
 		return errors.New("no key found in args")
 	}
@@ -79,16 +78,10 @@ func (p *Pipeline) Exec(ctx *gin.Context) (res []interface{}, err error) {
 		p.err = err
 		msg = "pipeline exec error: " + err.Error()
 	}
-
-	end := time.Now()
 	fields := []zlog.Field{
-		zlog.String("remoteAddr", p.redis.remoteAddr),
-		zlog.String("service", p.redis.service),
-		zlog.String("reqStartTime", utils.GetFormatRequestTime(start)),
-		zlog.String("reqEndTime", utils.GetFormatRequestTime(end)),
-		zlog.Float64("cost", utils.GetRequestCost(start, end)),
 		zlog.Int("ralCode", ralCode),
 	}
+	fields = append(fields, zlog.AppendCostTime(start, time.Now())...)
 
 	p.redis.logger.Info(msg, fields...)
 

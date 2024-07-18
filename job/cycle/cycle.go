@@ -2,7 +2,7 @@ package cycle
 
 import (
 	"fmt"
-	"github.com/tiant-developer/go-tiant/zlog"
+	"git.atomecho.cn/atomecho/golib/zlog"
 	"log"
 	"os"
 	"runtime"

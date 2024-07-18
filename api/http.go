@@ -1,15 +1,16 @@
 package api
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"git.atomecho.cn/atomecho/golib/zlog"
+	"github.com/bytedance/sonic"
+	"github.com/duke-git/lancet/v2/strutil"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
-	"github.com/tiant-developer/go-tiant/utils"
-	"github.com/tiant-developer/go-tiant/zlog"
 	"io"
 	"net"
 	"net/http"
@@ -23,7 +24,6 @@ import (
 const (
 	EncodeJson    = "_json"
 	EncodeForm    = "_form"
-	EncodeMcPack  = "_mcPack"
 	EncodeRaw     = "_raw"
 	EncodeRawByte = "_raw_byte"
 )
@@ -58,7 +58,7 @@ func (o *HttpRequestOptions) getData() ([]byte, error) {
 
 	switch o.Encode {
 	case EncodeJson:
-		reqBody, err := json.Marshal(o.RequestBody)
+		reqBody, err := sonic.Marshal(o.RequestBody)
 		return reqBody, err
 	case EncodeRaw:
 		var err error
@@ -66,7 +66,7 @@ func (o *HttpRequestOptions) getData() ([]byte, error) {
 		if !ok {
 			err = errors.New("EncodeRaw need string type")
 		}
-		return utils.StringToBytes(encodeData), err
+		return strutil.StringToBytes(encodeData), err
 	case EncodeRawByte:
 		var err error
 		encodeData, ok := o.RequestBody.([]byte)
@@ -78,7 +78,7 @@ func (o *HttpRequestOptions) getData() ([]byte, error) {
 		fallthrough
 	default:
 		encodeData, err := o.getFormRequestData()
-		return utils.StringToBytes(encodeData), err
+		return strutil.StringToBytes(encodeData), err
 	}
 }
 func (o *HttpRequestOptions) getFormRequestData() (string, error) {
@@ -98,7 +98,7 @@ func (o *HttpRequestOptions) getFormRequestData() (string, error) {
 			case string:
 				vStr = value.(string)
 			default:
-				if tmp, err := json.Marshal(value); err != nil {
+				if tmp, err := sonic.Marshal(value); err != nil {
 					return "", err
 				} else {
 					vStr = string(tmp)
@@ -120,8 +120,7 @@ func (o *HttpRequestOptions) GetContentType() (cType string) {
 	switch o.Encode {
 	case EncodeJson:
 		cType = "application/json"
-	case EncodeMcPack:
-		fallthrough
+
 	case EncodeForm:
 		fallthrough
 	default:
@@ -148,23 +147,20 @@ type ApiClient struct {
 	Proxy           string        `yaml:"proxy"`
 	MaxIdleConns    int           `yaml:"maxIdleConns"`
 	IdleConnTimeout time.Duration `yaml:"idleConnTimeout"`
-	BasicAuth       struct {
-		Username string `yaml:"username"`
-		Password string `yaml:"password"`
-	}
-
 	// request body 最大长度展示，0表示采用默认的10240，-1表示不打印
 	MaxReqBodyLen int `yaml:"maxReqBodyLen"`
 	// response body 最大长度展示，0表示采用默认的10240，-1表示不打印。指定长度的时候需注意，返回的json可能被截断
 	MaxRespBodyLen int `yaml:"maxRespBodyLen"`
-
 	// 配置中设置了该值后当 err!=nil || httpCode >= retryHttpCode 时会重试（该策略优先级最低）
 	RetryHttpCode int `yaml:"retryHttpCode"`
-
 	// 重试策略，可不指定，默认使用`defaultRetryPolicy`(只有在`api.yaml`中指定retry>0 时生效)
 	retryPolicy RetryPolicy  `json:"-"`
 	HTTPClient  *http.Client `json:"-"`
 	clientInit  sync.Once    `json:"-"`
+	BasicAuth   struct {
+		Username string `yaml:"username"`
+		Password string `yaml:"password"`
+	} `yaml:"basicAuth"`
 }
 
 func (client *ApiClient) SetRetryPolicy(retry RetryPolicy) {
@@ -205,6 +201,8 @@ func (client *ApiClient) makeRequest(ctx *gin.Context, method, url string, data 
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("Content-Type", opts.GetContentType())
+	req.Header.Set("Request-Id", zlog.GetRequestID(ctx))
 	if opts.Headers != nil {
 		for k, v := range opts.Headers {
 			req.Header.Set(k, v)
@@ -224,8 +222,6 @@ func (client *ApiClient) makeRequest(ctx *gin.Context, method, url string, data 
 	if client.BasicAuth.Username != "" {
 		req.SetBasicAuth(client.BasicAuth.Username, client.BasicAuth.Password)
 	}
-	req.Header.Set("Content-Type", opts.GetContentType())
-	req.Header.Set("Request-Id", zlog.GetRequestID(ctx))
 	return req, nil
 }
 
@@ -243,29 +239,33 @@ func (client *ApiClient) HttpGet(ctx *gin.Context, path string, opts HttpRequest
 	} else {
 		u = fmt.Sprintf("%s%s?%s", client.Domain, path, urlData)
 	}
-
 	req, err := client.makeRequest(ctx, "GET", u, nil, opts)
 	if err != nil {
 		zlog.WarnLogger(ctx, "http client makeRequest error: "+err.Error())
 		return nil, err
 	}
-
 	t := client.beforeHttpStat(ctx, req)
-	body, fields, err := client.httpDo(ctx, req, &opts)
+	body, err := client.httpDo(ctx, req, &opts, urlData)
 	client.afterHttpStat(ctx, req.URL.Scheme, t)
+	return &body, err
+}
 
-	_, respData := client.formatLogMsg(nil, body.Response)
-	zlog.DebugLogger(ctx, "http get request",
-		zlog.String("url", u),
-		zlog.Int("responseCode", body.HttpCode),
-		zlog.ByteString("responseBody", respData),
-	)
-	msg := "http request success"
+func (client *ApiClient) HttpPut(ctx *gin.Context, path string, opts HttpRequestOptions) (*ApiResult, error) {
+	// http request
+	urlData, err := opts.getData()
 	if err != nil {
-		msg = err.Error()
+		zlog.WarnLogger(ctx, "http client make data error: "+err.Error())
+		return nil, err
 	}
-	zlog.InfoLogger(ctx, msg, fields...)
-
+	// 创建request
+	req, err := client.makeRequest(ctx, "PUT", fmt.Sprintf("%s%s", client.Domain, path), bytes.NewReader(urlData), opts)
+	if err != nil {
+		zlog.WarnLogger(ctx, "http client makeRequest error: "+err.Error())
+		return nil, err
+	}
+	t := client.beforeHttpStat(ctx, req)
+	body, err := client.httpDo(ctx, req, &opts, urlData)
+	client.afterHttpStat(ctx, req.URL.Scheme, t)
 	return &body, err
 }
 
@@ -276,35 +276,47 @@ func (client *ApiClient) HttpPost(ctx *gin.Context, path string, opts HttpReques
 		zlog.WarnLogger(ctx, "http client make data error: "+err.Error())
 		return nil, err
 	}
-
-	u := fmt.Sprintf("%s%s", client.Domain, path)
-
-	req, err := client.makeRequest(ctx, "POST", u, bytes.NewReader(urlData), opts)
+	// 创建request
+	req, err := client.makeRequest(ctx, "POST", fmt.Sprintf("%s%s", client.Domain, path), bytes.NewReader(urlData), opts)
 	if err != nil {
 		zlog.WarnLogger(ctx, "http client makeRequest error: "+err.Error())
 		return nil, err
 	}
-
+	// http分析
 	t := client.beforeHttpStat(ctx, req)
-	body, fields, err := client.httpDo(ctx, req, &opts)
-	client.afterHttpStat(ctx, req.URL.Scheme, t)
-
-	reqData, respData := client.formatLogMsg(urlData, body.Response)
-	zlog.DebugLogger(ctx, "http post request",
-		zlog.String("url", u),
-		zlog.ByteString("params", reqData),
-		zlog.Int("responseCode", body.HttpCode),
-		zlog.ByteString("responseBody", respData),
-	)
-
-	msg := "http request success"
+	body, err := client.httpDo(ctx, req, &opts, urlData)
 	if err != nil {
-		msg = err.Error()
+		zlog.Errorf(ctx, "ApiPostWithOpts failed, path:%s, err:%v", path, err.Error())
+		return nil, err
 	}
-
-	zlog.InfoLogger(ctx, msg, fields...)
-
+	// http分析结束
+	client.afterHttpStat(ctx, req.URL.Scheme, t)
 	return &body, err
+}
+
+func (client *ApiClient) HttpPostStream(ctx *gin.Context, path string, opts HttpRequestOptions, f func([]byte) error) (err error) {
+	// http request
+	urlData, err := opts.getData()
+	if err != nil {
+		zlog.WarnLogger(ctx, "http client make data error: "+err.Error())
+		return err
+	}
+	// 创建request
+	req, err := client.makeRequest(ctx, "POST", fmt.Sprintf("%s%s", client.Domain, path), bytes.NewReader(urlData), opts)
+	if err != nil {
+		zlog.WarnLogger(ctx, "http client makeRequest error: "+err.Error())
+		return err
+	}
+	// http分析
+	t := client.beforeHttpStat(ctx, req)
+	err = client.DoStream(ctx, req, &opts, urlData, f)
+	if err != nil {
+		zlog.Errorf(ctx, "ApiPostWithOpts failed, path:%s, err:%v", path, err.Error())
+		return err
+	}
+	// http分析结束
+	client.afterHttpStat(ctx, req.URL.Scheme, t)
+	return err
 }
 
 type ApiResult struct {
@@ -333,24 +345,22 @@ func (client *ApiClient) GetRetryPolicy(opts *HttpRequestOptions) (retryPolicy R
 	return retryPolicy
 }
 
-func (client *ApiClient) httpDo(ctx *gin.Context, req *http.Request, opts *HttpRequestOptions) (res ApiResult, field []zlog.Field, err error) {
+func (client *ApiClient) httpDo(ctx *gin.Context, req *http.Request, opts *HttpRequestOptions, urlData []byte) (res ApiResult, err error) {
 	timeout := 3 * time.Second
 	if opts != nil && opts.Timeout > 0 {
 		timeout = opts.Timeout
 	} else if client.Timeout > 0 {
 		timeout = client.Timeout
 	}
-
 	start := time.Now()
 	fields := []zlog.Field{
 		zlog.String("prot", "http"),
-		zlog.String("service", client.Service),
 		zlog.String("method", req.Method),
+		zlog.String("service", client.Service),
 		zlog.String("domain", client.Domain),
 		zlog.String("requestUri", req.URL.Path),
 		zlog.Duration("timeout", timeout),
 	}
-
 	client.clientInit.Do(func() {
 		if client.HTTPClient == nil {
 			client.HTTPClient = &http.Client{
@@ -382,7 +392,7 @@ func (client *ApiClient) httpDo(ctx *gin.Context, req *http.Request, opts *HttpR
 				data, err := io.ReadAll(req.Body)
 				_ = req.Body.Close()
 				if err != nil {
-					return res, fields, err
+					return res, err
 				}
 				dataBuffer = bytes.NewReader(data)
 				req.ContentLength = int64(dataBuffer.Len())
@@ -434,15 +444,79 @@ func (client *ApiClient) httpDo(ctx *gin.Context, req *http.Request, opts *HttpR
 		err = fmt.Errorf("giving up after %d attempt(s): %s", attemptCount, msg)
 	}
 
-	end := time.Now()
-
 	fields = append(fields,
-		zlog.String("httpStartTime", utils.GetFormatRequestTime(start)),
-		zlog.String("httpEndTime", utils.GetFormatRequestTime(end)),
-		zlog.Float64("httpCost", utils.GetRequestCost(start, end)),
-		zlog.Int("httpCode", res.HttpCode),
+		zlog.Int("respCode", res.HttpCode),
 	)
-	return res, fields, err
+	requestData, respData := client.formatLogMsg(urlData, res.Response)
+	fields = append(fields, zlog.ByteString("reqParam", requestData))
+	fields = append(fields, zlog.ByteString("respBody", respData))
+	fields = append(fields, zlog.AppendCostTime(start, time.Now())...)
+	msg := "http request success"
+	if err != nil {
+		msg = err.Error()
+	}
+	zlog.InfoLogger(ctx, msg, fields...)
+	return res, err
+}
+
+func (client *ApiClient) DoStream(ctx *gin.Context, req *http.Request, opts *HttpRequestOptions, urlData []byte, f func([]byte) error) (err error) {
+	timeout := 3 * time.Second
+	if opts != nil && opts.Timeout > 0 {
+		timeout = opts.Timeout
+	} else if client.Timeout > 0 {
+		timeout = client.Timeout
+	}
+	start := time.Now()
+	fields := []zlog.Field{
+		zlog.String("prot", "http"),
+		zlog.String("method", req.Method),
+		zlog.String("service", client.Service),
+		zlog.String("domain", client.Domain),
+		zlog.String("requestUri", req.URL.Path),
+		zlog.Duration("timeout", timeout),
+	}
+	client.clientInit.Do(func() {
+		if client.HTTPClient == nil {
+			client.HTTPClient = &http.Client{
+				Transport: client.GetTransPort(),
+			}
+		}
+	})
+	c, _ := context.WithTimeout(context.Background(), timeout)
+	req = req.WithContext(c)
+
+	resp, doErr := client.HTTPClient.Do(req)
+	if doErr != nil {
+		return doErr
+	}
+	br := bufio.NewReader(resp.Body)
+	for {
+		out, err := br.ReadBytes('\n')
+		// 读取错误，直接返回错误
+		if err != nil && err != io.EOF {
+			return err
+		}
+		errA := f(out)
+		if errA != nil {
+			return errA
+		}
+		if err == io.EOF {
+			break
+		}
+	}
+	drainAndCloseBody(resp, 16384)
+	fields = append(fields,
+		zlog.Int("respCode", resp.StatusCode),
+	)
+	requestData, _ := client.formatLogMsg(urlData, nil)
+	fields = append(fields, zlog.ByteString("reqParam", requestData))
+	fields = append(fields, zlog.AppendCostTime(start, time.Now())...)
+	msg := "http request success"
+	if doErr != nil {
+		msg = err.Error()
+	}
+	zlog.InfoLogger(ctx, msg, fields...)
+	return err
 }
 
 func (client *ApiClient) formatLogMsg(requestParam, responseData []byte) (req, resp []byte) {
@@ -458,7 +532,7 @@ func (client *ApiClient) formatLogMsg(requestParam, responseData []byte) (req, r
 
 	if maxReqBodyLen != -1 {
 		req = requestParam
-		if len(requestParam) > maxRespBodyLen {
+		if len(requestParam) > maxReqBodyLen {
 			req = req[:maxReqBodyLen]
 		}
 	}

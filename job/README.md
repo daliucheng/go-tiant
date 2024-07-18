@@ -5,8 +5,8 @@
 package router
 
 import (
-	"github.com/tiant-developer/go-tiant/job/cron"
-	"github.com/tiant-developer/go-tiant/job/cycle"
+	"git.atomecho.cn/atomecho/golib/job/cron"
+	"git.atomecho.cn/atomecho/golib/job/cycle"
 	"github.com/gin-gonic/gin"
 	"time"
 )
