@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var namespace = "atomecho"
+var namespace = "monitor"
 
 var (
 	labels = []string{"appName", "status", "endpoint", "method"}

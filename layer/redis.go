@@ -62,7 +62,7 @@ func SetDefaultRedisClient(cli *redis.Redis, appName string) {
 }
 
 func getPrefix() string {
-	prefix := "atomecho:"
+	prefix := ""
 	// 模块名默认module，很容易冲突
 	if AppName == "" {
 		prefix += "default:"

@@ -102,9 +102,9 @@ var logConfig = struct {
 	BufferFlushInterval: 5 * time.Second,
 }
 
-func InitLog(conf LogConfig) *zap.SugaredLogger {
+func InitLog(moduleName string, conf LogConfig) *zap.SugaredLogger {
 	// 定制日志格式
-	if err := RegisterJSONEncoder(); err != nil {
+	if err := RegisterJSONEncoder(moduleName); err != nil {
 		println("RegisterJSONEncoder: " + err.Error())
 	}
 
@@ -120,8 +120,8 @@ func InitLog(conf LogConfig) *zap.SugaredLogger {
 	return SugaredLogger
 }
 
-func RegisterJSONEncoder() error {
-	return zap.RegisterEncoder("atomecho", func(cfg zapcore.EncoderConfig) (zapcore.Encoder, error) {
+func RegisterJSONEncoder(moduleName string) error {
+	return zap.RegisterEncoder(moduleName, func(cfg zapcore.EncoderConfig) (zapcore.Encoder, error) {
 		jsonEncoder := zapcore.NewJSONEncoder(cfg)
 		return &defaultEncoder{
 			Encoder: jsonEncoder,
