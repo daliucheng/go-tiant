@@ -13,7 +13,7 @@ import (
 
 // util key
 const (
-	ContextKeyRequestID = "Atom_Request_Id"
+	ContextKeyRequestID = "Tiant_Request_Id"
 	ContextKeyNoLog     = "_no_log"
 	ContextKeyUri       = "_uri"
 	zapLoggerAddr       = "_zap_addr"

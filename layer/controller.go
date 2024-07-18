@@ -74,11 +74,11 @@ func EchoJsonError(ctx *gin.Context, data []byte) {
 func EchoStreamError(ctx *gin.Context, err error) {
 	rander := http2.DefaultRender{}
 	if e, ok := err.(errors.Error); ok {
-		rander.ErrNo = e.Code
-		rander.ErrMsg = e.Message
+		rander.Code = e.Code
+		rander.Message = e.Message
 	} else {
-		rander.ErrNo = errors.ErrorSystemError.Code
-		rander.ErrMsg = errors.ErrorSystemError.Message
+		rander.Code = errors.ErrorSystemError.Code
+		rander.Message = errors.ErrorSystemError.Message
 	}
 	flusher, _ := ctx.Writer.(http.Flusher)
 	str, _ := sonic.Marshal(rander)

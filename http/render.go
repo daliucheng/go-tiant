@@ -108,22 +108,22 @@ var defaultNew = func() Render {
 }
 
 type DefaultRender struct {
-	ErrNo  int         `json:"errNo"`
-	ErrMsg string      `json:"errMsg"`
-	Data   interface{} `json:"data"`
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
 }
 
 func (r *DefaultRender) GetReturnCode() int {
-	return r.ErrNo
+	return r.Code
 }
 func (r *DefaultRender) SetReturnCode(code int) {
-	r.ErrNo = code
+	r.Code = code
 }
 func (r *DefaultRender) GetReturnMsg() string {
-	return r.ErrMsg
+	return r.Message
 }
 func (r *DefaultRender) SetReturnMsg(msg string) {
-	r.ErrMsg = msg
+	r.Message = msg
 }
 func (r *DefaultRender) GetReturnData() interface{} {
 	return r.Data
@@ -134,8 +134,8 @@ func (r *DefaultRender) SetReturnData(data interface{}) {
 
 // 设置通用header头
 func setCommonHeader(ctx *gin.Context, code int, msg string) {
-	ctx.Header("Err-No", strconv.Itoa(code))
-	ctx.Header("Err-Msg", msg)
+	ctx.Header("code", strconv.Itoa(code))
+	ctx.Header("message", msg)
 	ctx.Header(zlog.ContextKeyRequestID, zlog.GetRequestID(ctx))
 }
 
