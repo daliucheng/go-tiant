@@ -2,7 +2,6 @@ package golib
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/tiant-developer/go-tiant/env"
 	"github.com/tiant-developer/go-tiant/layer"
 	"github.com/tiant-developer/go-tiant/middleware"
 	"github.com/tiant-developer/go-tiant/redis"
@@ -19,8 +18,6 @@ type BootstrapConf struct {
 
 // 全局注册一下，是否使用flow模式开发
 func Bootstraps(engine *gin.Engine, conf BootstrapConf) {
-	// 环境默认release
-	gin.SetMode(env.RunMode)
 	// 通用runtime指标采集接口
 	middleware.RegistryMetrics(engine, conf.AppName)
 	// 全局中间键 access日志

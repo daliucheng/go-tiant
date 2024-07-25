@@ -18,22 +18,15 @@ var (
 	isDocker bool
 	// 项目AppName
 	AppName string
-	// gin运行模式
-	RunMode string
 )
 
 func init() {
 	LocalIP = GetInternalIp()
 	isDocker = false
 	// 运行环境
-	RunMode = gin.ReleaseMode
-	r := os.Getenv("DOCKER_ENV")
-	switch r {
-	case "online":
-		RunMode = gin.ReleaseMode
+	r := os.Getenv(gin.EnvGinMode)
+	if r == gin.ReleaseMode {
 		isDocker = true
-	default:
-		RunMode = gin.DebugMode
 	}
 }
 
