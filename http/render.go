@@ -49,11 +49,11 @@ func RenderJson(ctx *gin.Context, code int, msg string, data interface{}) {
 
 func RenderJsonSucc(ctx *gin.Context, data interface{}) {
 	r := newJsonRender()
-	r.SetReturnCode(0)
-	r.SetReturnMsg("succ")
+	r.SetReturnCode(200)
+	r.SetReturnMsg("success")
 	r.SetReturnData(data)
 
-	setCommonHeader(ctx, 0, "succ")
+	setCommonHeader(ctx, 0, "success")
 	ctx.JSON(http.StatusOK, r)
 	return
 }
