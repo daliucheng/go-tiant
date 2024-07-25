@@ -53,7 +53,7 @@ func RenderJsonSucc(ctx *gin.Context, data interface{}) {
 	r.SetReturnMsg("success")
 	r.SetReturnData(data)
 
-	setCommonHeader(ctx, 0, "success")
+	setCommonHeader(ctx, 200, "success")
 	ctx.JSON(http.StatusOK, r)
 	return
 }
