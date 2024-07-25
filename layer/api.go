@@ -1,16 +1,15 @@
 package layer
 
 import (
-	"github.com/bytedance/sonic"
-	jsoniter "github.com/json-iterator/go"
+	"encoding/json"
 	"github.com/tiant-developer/go-tiant/api"
 	"github.com/tiant-developer/go-tiant/errors"
 )
 
 type Res struct {
-	ErrNo  int                 `json:"errNo"`
-	ErrMsg string              `json:"errMsg"`
-	Data   jsoniter.RawMessage `json:"data"`
+	ErrNo  int    `json:"errNo"`
+	ErrMsg string `json:"errMsg"`
+	Data   []byte `json:"data"`
 }
 
 type ApiRes struct {
@@ -91,7 +90,7 @@ func (entity *Api) ApiPostWithOpts(path string, reqOpts api.HttpRequestOptions) 
 func (entity *Api) handel(path string, res *api.ApiResult) (*ApiRes, error) {
 	httpRes := Res{}
 	if len(res.Response) > 0 {
-		e := jsoniter.Unmarshal(res.Response, &httpRes)
+		e := json.Unmarshal(res.Response, &httpRes)
 		if e != nil {
 			// 限制一下错误日志打印的长度，2k
 			data := res.Response
@@ -127,7 +126,7 @@ func (entity *Api) DecodeApiResponse(outPut interface{}, data *ApiRes, err error
 	}
 	if len(data.Data) > 0 {
 		// 解析数据
-		if err = sonic.Unmarshal(data.Data, outPut); err != nil {
+		if err = json.Unmarshal(data.Data, outPut); err != nil {
 			entity.LogErrorf("api error, api response unmarshal, data:%s, err:%+v", data.Data, err.Error())
 			return errors.ErrorSystemError
 		}

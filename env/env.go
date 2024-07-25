@@ -1,8 +1,8 @@
 package env
 
 import (
-	"github.com/duke-git/lancet/v2/netutil"
 	"github.com/gin-gonic/gin"
+	"net"
 	"os"
 	"path/filepath"
 )
@@ -23,7 +23,7 @@ var (
 )
 
 func init() {
-	LocalIP = netutil.GetInternalIp()
+	LocalIP = GetInternalIp()
 	isDocker = false
 	// 运行环境
 	RunMode = gin.ReleaseMode
@@ -75,4 +75,20 @@ func SetRootPath(r string) {
 	if !isDocker {
 		rootPath = r
 	}
+}
+
+func GetInternalIp() string {
+	addr, err := net.InterfaceAddrs()
+	if err != nil {
+		panic(err.Error())
+	}
+	for _, a := range addr {
+		if ipNet, ok := a.(*net.IPNet); ok && !ipNet.IP.IsLoopback() {
+			if ipNet.IP.To4() != nil {
+				return ipNet.IP.String()
+			}
+		}
+	}
+
+	return ""
 }

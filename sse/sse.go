@@ -1,8 +1,8 @@
 package sse
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/tiant-developer/go-tiant/errors"
 	http2 "github.com/tiant-developer/go-tiant/http"
@@ -34,7 +34,7 @@ func EchoStreamError(ctx *gin.Context, err error) {
 		rander.Message = errors.ErrorSystemError.Message
 	}
 	flusher, _ := ctx.Writer.(http.Flusher)
-	str, _ := sonic.Marshal(rander)
+	str, _ := json.Marshal(rander)
 	msg := MessageEvent{
 		Id:    "",
 		Event: "error",

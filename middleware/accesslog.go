@@ -3,11 +3,11 @@ package middleware
 import (
 	"bytes"
 	"fmt"
-	"github.com/duke-git/lancet/v2/strutil"
 	"github.com/tiant-developer/go-tiant/zlog"
 	"io"
 	"strings"
 	"time"
+	"unsafe"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -148,7 +148,7 @@ func getReqBody(c *gin.Context, maxReqBodyLen int) (reqBody string) {
 		if err != nil {
 			zlog.WarnLogger(c, "get http request body error: "+err.Error())
 		}
-		reqBody = strutil.BytesToString(requestBody)
+		reqBody = *(*string)(unsafe.Pointer(&requestBody))
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 	}
 	// 截断参数

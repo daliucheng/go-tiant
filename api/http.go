@@ -5,10 +5,9 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bytedance/sonic"
-	"github.com/duke-git/lancet/v2/strutil"
 	"github.com/gin-gonic/gin"
 	"github.com/tiant-developer/go-tiant/zlog"
 	"io"
@@ -19,6 +18,7 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"unsafe"
 )
 
 const (
@@ -58,7 +58,7 @@ func (o *HttpRequestOptions) getData() ([]byte, error) {
 
 	switch o.Encode {
 	case EncodeJson:
-		reqBody, err := sonic.Marshal(o.RequestBody)
+		reqBody, err := json.Marshal(o.RequestBody)
 		return reqBody, err
 	case EncodeRaw:
 		var err error
@@ -66,7 +66,7 @@ func (o *HttpRequestOptions) getData() ([]byte, error) {
 		if !ok {
 			err = errors.New("EncodeRaw need string type")
 		}
-		return strutil.StringToBytes(encodeData), err
+		return *(*[]byte)(unsafe.Pointer(&encodeData)), err
 	case EncodeRawByte:
 		var err error
 		encodeData, ok := o.RequestBody.([]byte)
@@ -78,7 +78,7 @@ func (o *HttpRequestOptions) getData() ([]byte, error) {
 		fallthrough
 	default:
 		encodeData, err := o.getFormRequestData()
-		return strutil.StringToBytes(encodeData), err
+		return *(*[]byte)(unsafe.Pointer(&encodeData)), err
 	}
 }
 func (o *HttpRequestOptions) getFormRequestData() (string, error) {
@@ -98,7 +98,7 @@ func (o *HttpRequestOptions) getFormRequestData() (string, error) {
 			case string:
 				vStr = value.(string)
 			default:
-				if tmp, err := sonic.Marshal(value); err != nil {
+				if tmp, err := json.Marshal(value); err != nil {
 					return "", err
 				} else {
 					vStr = string(tmp)

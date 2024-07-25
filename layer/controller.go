@@ -1,8 +1,8 @@
 package layer
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/tiant-developer/go-tiant/errors"
 	http2 "github.com/tiant-developer/go-tiant/http"
@@ -59,7 +59,7 @@ func EchoJson(ctx *gin.Context, data []byte) {
 }
 
 func EchoJsonObj(ctx *gin.Context, data interface{}) {
-	dataJson, _ := sonic.Marshal(data)
+	dataJson, _ := json.Marshal(data)
 	ctx.Writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	ctx.Writer.WriteHeader(http.StatusOK)
 	ctx.Writer.Write(dataJson)
@@ -81,7 +81,7 @@ func EchoStreamError(ctx *gin.Context, err error) {
 		rander.Message = errors.ErrorSystemError.Message
 	}
 	flusher, _ := ctx.Writer.(http.Flusher)
-	str, _ := sonic.Marshal(rander)
+	str, _ := json.Marshal(rander)
 	fmt.Fprintf(ctx.Writer, "%s\n", str)
 	flusher.Flush()
 }

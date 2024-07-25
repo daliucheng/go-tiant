@@ -1,9 +1,8 @@
 package redis
 
 import (
+	"encoding/json"
 	"reflect"
-
-	json "github.com/json-iterator/go"
 )
 
 func parseToString(value interface{}) string {
