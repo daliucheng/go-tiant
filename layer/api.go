@@ -102,7 +102,7 @@ func (entity *Api) handel(path string, res *api.ApiResult) (*ApiRes, error) {
 			return nil, e
 		}
 	}
-	if httpRes.Code != 0 {
+	if httpRes.Code != 200 {
 		entity.LogErrorf("http call has error, path:%s, errNo:%d, errMsg:%s", path, httpRes.Code, httpRes.Message)
 	}
 	apiRes := &ApiRes{
