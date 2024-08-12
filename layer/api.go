@@ -7,15 +7,15 @@ import (
 )
 
 type Res struct {
-	ErrNo  int    `json:"errNo"`
-	ErrMsg string `json:"errMsg"`
-	Data   []byte `json:"data"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    []byte `json:"data"`
 }
 
 type ApiRes struct {
-	ErrNo  int
-	ErrMsg string
-	Data   []byte
+	Code    int
+	Message string
+	Data    []byte
 }
 
 type IApi interface {
@@ -102,13 +102,13 @@ func (entity *Api) handel(path string, res *api.ApiResult) (*ApiRes, error) {
 			return nil, e
 		}
 	}
-	if httpRes.ErrNo != 0 {
-		entity.LogErrorf("http call has error, path:%s, errNo:%d, errMsg:%s", path, httpRes.ErrNo, httpRes.ErrMsg)
+	if httpRes.Code != 0 {
+		entity.LogErrorf("http call has error, path:%s, errNo:%d, errMsg:%s", path, httpRes.Code, httpRes.Message)
 	}
 	apiRes := &ApiRes{
-		ErrNo:  httpRes.ErrNo,
-		ErrMsg: httpRes.ErrMsg,
-		Data:   httpRes.Data,
+		Code:    httpRes.Code,
+		Message: httpRes.Message,
+		Data:    httpRes.Data,
 	}
 	return apiRes, nil
 }
@@ -118,10 +118,10 @@ func (entity *Api) DecodeApiResponse(outPut interface{}, data *ApiRes, err error
 		return err
 	}
 
-	if data.ErrNo != 0 {
+	if data.Code != 0 {
 		return errors.Error{
-			Code:    data.ErrNo,
-			Message: data.ErrMsg,
+			Code:    data.Code,
+			Message: data.Message,
 		}
 	}
 	if len(data.Data) > 0 {
