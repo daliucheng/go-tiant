@@ -40,7 +40,8 @@ func (w customRespWriter) Write(b []byte) (int, error) {
 // access日志打印
 type LoggerConfig struct {
 	// SkipPaths is a url path array which logs are not written.
-	SkipPaths []string `yaml:"skipPaths"`
+	SkipPaths  []string `yaml:"skipPaths"`
+	SkipCookie bool     `yaml:"skipCookie"`
 
 	// request body 最大长度展示，0表示采用默认的10240，-1表示不打印
 	MaxReqBodyLen int `yaml:"maxReqBodyLen"`
@@ -108,11 +109,13 @@ func AccessLog(conf LoggerConfig) gin.HandlerFunc {
 		commonFields := []zlog.Field{
 			zlog.String("method", c.Request.Method),
 			zlog.String("clientIp", c.ClientIP()),
-			zlog.String("cookie", getCookie(c)),
 			zlog.String("requestParam", reqParam),
 			zlog.Int("responseStatus", c.Writer.Status()),
 			zlog.String("response", response),
 			zlog.Int("bodySize", c.Writer.Size()),
+		}
+		if !conf.SkipCookie {
+			commonFields = append(commonFields, zlog.String("cookie", getCookie(c)))
 		}
 		commonFields = append(commonFields, zlog.AppendCostTime(start, time.Now())...)
 		// 新的notice添加方式
