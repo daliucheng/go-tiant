@@ -13,6 +13,7 @@ import (
 
 type RedisConf struct {
 	Addr            string        `yaml:"addr"`
+	Db              int           `yaml:"db"`
 	Password        string        `yaml:"password"`
 	MaxIdle         int           `yaml:"maxIdle"`
 	MaxActive       int           `yaml:"maxActive"`
@@ -76,6 +77,7 @@ func InitRedisClient(conf RedisConf) (*Redis, error) {
 				redigo.DialConnectTimeout(conf.ConnTimeOut),
 				redigo.DialReadTimeout(conf.ReadTimeOut),
 				redigo.DialWriteTimeout(conf.WriteTimeOut),
+				redigo.DialDatabase(conf.Db),
 			)
 			if err != nil {
 				return nil, err
