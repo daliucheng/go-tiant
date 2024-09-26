@@ -1,16 +1,11 @@
 package layer
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/tiant-developer/go-tiant/errors"
-	http2 "github.com/tiant-developer/go-tiant/http"
+	"github.com/tiant-developer/golib/errors"
 	"net/http"
 	"reflect"
 )
-
-type ControllerErrType string
 
 type IController[T any] interface {
 	ILayer
@@ -33,58 +28,13 @@ func (entity *Controller) ShouldRender() bool {
 }
 
 func (entity *Controller) RenderJsonFail(err error) {
-	http2.RenderJsonFail(entity.GetCtx(), err)
+	RenderJsonFail(entity.GetCtx(), err)
 }
 
 func (entity *Controller) RenderJsonSuccess(data any) {
-	http2.RenderJsonSucc(entity.GetCtx(), data)
+	RenderJsonSucc(entity.GetCtx(), data)
 }
 
-func EchoXml(ctx *gin.Context, data []byte) {
-	ctx.Writer.Header().Set("Content-Type", "application/xml; charset=utf-8")
-	ctx.Writer.WriteHeader(http.StatusOK)
-	ctx.Writer.Write(data)
-}
-
-func EchoXmlError(ctx *gin.Context, data []byte) {
-	ctx.Writer.Header().Set("Content-Type", "application/xml; charset=utf-8")
-	ctx.Writer.WriteHeader(http.StatusInternalServerError)
-	ctx.Writer.Write(data)
-}
-
-func EchoJson(ctx *gin.Context, data []byte) {
-	ctx.Writer.Header().Set("Content-Type", "application/json; charset=utf-8")
-	ctx.Writer.WriteHeader(http.StatusOK)
-	ctx.Writer.Write(data)
-}
-
-func EchoJsonObj(ctx *gin.Context, data interface{}) {
-	dataJson, _ := json.Marshal(data)
-	ctx.Writer.Header().Set("Content-Type", "application/json; charset=utf-8")
-	ctx.Writer.WriteHeader(http.StatusOK)
-	ctx.Writer.Write(dataJson)
-}
-
-func EchoJsonError(ctx *gin.Context, data []byte) {
-	ctx.Writer.Header().Set("Content-Type", "application/json; charset=utf-8")
-	ctx.Writer.WriteHeader(http.StatusInternalServerError)
-	ctx.Writer.Write(data)
-}
-
-func EchoStreamError(ctx *gin.Context, err error) {
-	rander := http2.DefaultRender{}
-	if e, ok := err.(errors.Error); ok {
-		rander.Code = e.Code
-		rander.Message = e.Message
-	} else {
-		rander.Code = errors.ErrorSystemError.Code
-		rander.Message = errors.ErrorSystemError.Message
-	}
-	flusher, _ := ctx.Writer.(http.Flusher)
-	str, _ := json.Marshal(rander)
-	fmt.Fprintf(ctx.Writer, "%s\n", str)
-	flusher.Flush()
-}
 func slave(src any) any {
 	typ := reflect.TypeOf(src)
 	if typ.Kind() == reflect.Ptr { //如果是指针类型

@@ -2,9 +2,9 @@ package golib
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/tiant-developer/go-tiant/layer"
-	"github.com/tiant-developer/go-tiant/middleware"
-	"github.com/tiant-developer/go-tiant/redis"
+	"github.com/tiant-developer/golib/layer"
+	"github.com/tiant-developer/golib/middleware"
+	"github.com/tiant-developer/golib/redis"
 	"gorm.io/gorm"
 )
 

@@ -2,8 +2,8 @@ package rmq
 
 import (
 	"context"
-	"github.com/tiant-developer/go-tiant/env"
-	"github.com/tiant-developer/go-tiant/zlog"
+	"github.com/tiant-developer/golib/env"
+	"github.com/tiant-developer/golib/zlog"
 	"hash/fnv"
 	"math/rand"
 	"os"

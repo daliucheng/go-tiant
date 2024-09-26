@@ -2,8 +2,8 @@ package layer
 
 import (
 	"encoding/json"
-	"github.com/tiant-developer/go-tiant/api"
-	"github.com/tiant-developer/go-tiant/errors"
+	"github.com/tiant-developer/golib/api"
+	"github.com/tiant-developer/golib/errors"
 )
 
 type Res struct {

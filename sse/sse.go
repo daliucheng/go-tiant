@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/tiant-developer/go-tiant/errors"
-	http2 "github.com/tiant-developer/go-tiant/http"
+	"github.com/tiant-developer/golib/errors"
+	http2 "github.com/tiant-developer/golib/layer"
 	"net/http"
 )
 
@@ -24,7 +24,7 @@ func (e MessageEvent) String() string {
 }
 
 // 流式输出报错
-func EchoStreamError(ctx *gin.Context, err error) {
+func RenderStreamError(ctx *gin.Context, err error) {
 	rander := http2.DefaultRender{}
 	if e, ok := err.(errors.Error); ok {
 		rander.Code = e.Code
@@ -44,7 +44,7 @@ func EchoStreamError(ctx *gin.Context, err error) {
 	flusher.Flush()
 }
 
-func EchoStream(ctx *gin.Context, id, event, str string) {
+func RenderStream(ctx *gin.Context, id, event, str string) {
 	flusher, _ := ctx.Writer.(http.Flusher)
 	msg := MessageEvent{
 		Id:    id,

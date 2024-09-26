@@ -2,7 +2,7 @@ package rmq
 
 import (
 	"bytes"
-	"github.com/tiant-developer/go-tiant/zlog"
+	"github.com/tiant-developer/golib/zlog"
 	"strings"
 	"time"
 

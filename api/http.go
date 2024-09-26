@@ -9,7 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/tiant-developer/go-tiant/zlog"
+	"github.com/tiant-developer/golib/zlog"
 	"io"
 	"net"
 	"net/http"

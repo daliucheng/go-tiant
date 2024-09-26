@@ -2,7 +2,7 @@ package layer
 
 import (
 	"fmt"
-	"github.com/tiant-developer/go-tiant/redis"
+	"github.com/tiant-developer/golib/redis"
 )
 
 const (

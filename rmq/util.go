@@ -3,7 +3,7 @@ package rmq
 import (
 	"fmt"
 	"github.com/apache/rocketmq-client-go/v2/primitive"
-	"github.com/tiant-developer/go-tiant/zlog"
+	"github.com/tiant-developer/golib/zlog"
 	"net"
 	"net/http"
 	"strings"

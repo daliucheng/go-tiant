@@ -1,9 +1,9 @@
-package elastic
+package elastic7
 
 import (
 	"fmt"
-	"github.com/tiant-developer/go-tiant/env"
-	"github.com/tiant-developer/go-tiant/zlog"
+	"github.com/tiant-developer/golib/env"
+	"github.com/tiant-developer/golib/zlog"
 	"net/http"
 	"strings"
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/tiant-developer/go-tiant/zlog"
+	"github.com/tiant-developer/golib/zlog"
 	ormUtil "gorm.io/gorm/utils"
 	"gorm.io/plugin/dbresolver"
 	"time"

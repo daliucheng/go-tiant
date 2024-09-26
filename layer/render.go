@@ -1,10 +1,10 @@
-package http
+package layer
 
 import (
 	"encoding/json"
 	"fmt"
-	errors2 "github.com/tiant-developer/go-tiant/errors"
-	"github.com/tiant-developer/go-tiant/zlog"
+	errors2 "github.com/tiant-developer/golib/errors"
+	"github.com/tiant-developer/golib/zlog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -78,26 +78,6 @@ func RenderJsonFail(ctx *gin.Context, err error) {
 
 	// 打印错误栈
 	StackLogger(ctx, err)
-	return
-}
-
-func RenderJsonAbort(ctx *gin.Context, err error) {
-	r := newJsonRender()
-
-	switch errors.Cause(err).(type) {
-	case errors2.Error:
-		r.SetReturnCode(errors.Cause(err).(errors2.Error).Code)
-		r.SetReturnMsg(errors.Cause(err).(errors2.Error).Message)
-		r.SetReturnData(gin.H{})
-	default:
-		r.SetReturnCode(-1)
-		r.SetReturnMsg(errors.Cause(err).Error())
-		r.SetReturnData(gin.H{})
-	}
-
-	setCommonHeader(ctx, r.GetReturnCode(), r.GetReturnMsg())
-	ctx.AbortWithStatusJSON(http.StatusOK, r)
-
 	return
 }
 

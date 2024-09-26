@@ -2,7 +2,7 @@ package zlog
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/tiant-developer/go-tiant/env"
+	"github.com/tiant-developer/golib/env"
 	"io"
 	"os"
 	"path/filepath"

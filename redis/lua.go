@@ -1,7 +1,7 @@
 package redis
 
 import (
-	"github.com/tiant-developer/go-tiant/zlog"
+	"github.com/tiant-developer/golib/zlog"
 	"time"
 
 	redigo "github.com/gomodule/redigo/redis"
